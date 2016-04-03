@@ -1,0 +1,26 @@
+<%- include header %>
+<div class='text-center page-title'>用户登录</div>
+<div class="container">
+	<div class="row">
+		<div class="col-xs-4 col-xs-offset-4">
+			<div class='text-center  err-info'><%=err%></div>
+			<form method=post>
+				<div class=form-group>
+					<input type=text class=form-control name=username value='<%= username%>' placeholder=用户名 />
+				</div>
+				<div class=form-group>
+					<input type=text class=form-control name=password value='<%= password%>' placeholder=密码 />
+				</div>
+				<div class=form-group>
+					<input type=checkbox name=rememberMe value='1'/>记住我，一周内免登陆
+				</div>
+				<button type=submit class="btn btn-default center-block">登录</button>
+			</form>
+			<a href="https://graph.qq.com/oauth2.0/authorize?response_type=code&client_id={$this->appId}&redirect_uri=" class="icon connect-qq"><span icon-bg2="icon_qq_n"></span>  QQ登录</a>
+		</div>
+	</div>
+
+</div>
+
+
+<%- include footer %>

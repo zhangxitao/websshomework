@@ -1,0 +1,56 @@
+function registerCheck(username,password,passwordRepeat){
+	username = username.trim();
+	password = password.trim();
+	passwordRepeat = passwordRepeat.trim();
+	//正则表达式
+	var usernameRegex = /[^0-9^A-Z^a-z^_]/;
+	var passwordRegex = /[^0-9^A-Z^a-z]/;
+	var regUpper = /[A-Z]/;
+	var regLower = /[a-z]/;
+	var regNum = /[0-9]/;
+	var complex = 0;
+	//检查输入的用户名是否为空
+	if(username.length==0){
+		return '用户名不能为空！';
+	}
+	//检查输入的用户名是否只包含字母、数字、下划线，并且长度为3-20个字符
+	if(usernameRegex.exec(username)){
+		return '用户名只能是字母、数字、下划线的组合';
+	}
+	if(username.length<3||username.trim().length>20){
+		return '用户名长度限3-20个字符';
+	}
+	//检查输入的密码是否为空
+	if(password.length==0){
+		return '密码不能为空！';
+	}
+	//密码长度不能少于6个字符
+	if(password.length<6){
+		return '密码长度不能少于6个字符';
+	}
+	//检查密码是否只包含大小写字母和数字
+	if(passwordRegex.exec(password)){
+		return '密码只能是大小写字母和数字';
+	}
+	if(!(password.match(regUpper)&&password.match(regLower)&&password.match(regNum))){
+		return '密码必须同时包含大小写字母和数字';
+	}
+	//检查两次输入的密码是否一致
+	if(password!=passwordRepeat){
+		return '两次输入的密码不一致！';
+	}
+	return "";
+}
+
+
+//发布笔记检查
+function postNoteCheck(title,content){
+	if(title.trim().length==0){
+		return "笔记标题不能为空！";
+	}
+	if(content.trim().length==0){
+		return "笔记内容不能为空！";
+	}
+	return "";
+}
+exports.registerCheck=registerCheck

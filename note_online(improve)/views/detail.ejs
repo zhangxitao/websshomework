@@ -1,0 +1,76 @@
+<%- include header %>
+
+<div class="panel panel-default">
+	<div class="panel-heading">我的笔记列表</div>
+		<table class="table">
+			<thead>
+				<tr>
+					<th>序号</th>
+					<th>标题</th>
+					<th>标签</th>
+					<th>日期</th>
+					<!--th>笔记内容</th-->
+					<th>操作</th>
+				</tr>
+			</thead>
+			<tbody>
+			<%list.forEach(function(note,index){%>
+				<tr>
+					<td><%=(currentPage-1)*5+index+1%></td>
+					<td><%=note.title%></td>
+					<td><%=note.tag%></td>
+					<td><%=moment(note.createTime).locale('zh-cn').format('LL HH:mm:ss')%></td>
+					<!--td><%=note.content%></td-->
+					<td><a href='javascript:;' onclick="show('<%=note.title%>','<%=note.tag%>','<%=moment(note.createTime).locale('zh-cn').format('LL HH:mm:ss')%>','<%=note.content%>')" data-toggle="modal" data-target=".bs-example-modal-lg" title="查看"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
+						<a href="/delete?_id=<%=note._id%>" title="删除"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a></td>
+				</tr>
+			<%})%>		
+			</tbody>
+		</table>
+
+
+	<nav>
+		<ul class="pagination">
+			<%for(var i=1;i<=totalPage;i++){%>
+			<li <%if(i==currentPage){%>class="active"<%}%>><a href="/?page=<%=i%>"><%=i%> <span class="sr-only">(current)</span></a></li>
+			<%}%>
+			<!--p>共<%=totalPage%>页,当前第<%-currentPage%>页
+			</p-->
+		</ul>
+	</nav>
+	</div>
+</div>
+<div class="modal fade  bs-example-modal-lg" role="dialog" aria-labelledby="gridSystemModalLabel">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title" id="gridSystemModalLabel">Modal title</h4>
+			</div>
+			<div class="modal-body">
+				<div class="container-fluid">
+					<div class="row">
+						<div class="col-md-4" id="tag">.col-md-4</div>
+						<div class="col-md-4" id="date">.col-md-4 .col-md-offset-4</div>
+					</div>
+					<div class="row">
+						<div class="col-md-4" id="content">.col-md-3 .col-md-offset-3</div>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<script>
+	function show(title,tag,date,content){
+		$('#gridSystemModalLabel').text(title);
+		$('#tag').text(tag);
+		$('#date').text(date);
+		$('#content').text(content);
+	}
+</script>
+
+<%- include footer %>

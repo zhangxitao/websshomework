@@ -1,0 +1,19 @@
+.page-title{
+	font-size:20px;
+}
+.page-nav{
+	padding:10px;
+	background-color:#ccc;
+	margin-bottom:30px;
+}
+.nav-home,
+.nav-quit,
+.nav-username,
+.nav-register,
+.nav-login{
+	margin:0 10px;
+}
+
+.err-info{
+	font-color:
+}
