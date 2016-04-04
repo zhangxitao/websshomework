@@ -17,12 +17,12 @@
 			<%list.forEach(function(note,index){%>
 				<tr>
 					<td><%=(currentPage-1)*5+index+1%></td>
-					<td><%=note.title%></td>
+					<td><a href='javascript:;' onclick="show('<%=note.title%>','<%=note.tag%>','<%=moment(note.createTime).locale('zh-cn').format('LL HH:mm:ss')%>','<%=note.content%>')" data-toggle="modal" data-target=".bs-example-modal-lg" title="查看"><%=note.title%></a></td>
 					<td><%=note.tag%></td>
 					<td><%=moment(note.createTime).locale('zh-cn').format('LL HH:mm:ss')%></td>
 					<!--td><%=note.content%></td-->
-					<td><a href='javascript:;' onclick="show('<%=note.title%>','<%=note.tag%>','<%=moment(note.createTime).locale('zh-cn').format('LL HH:mm:ss')%>','<%=note.content%>')" data-toggle="modal" data-target=".bs-example-modal-lg" title="查看"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
-						<a href="/delete?_id=<%=note._id%>" title="删除"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a></td>
+					<td>
+						<a href="/delete?_id=<%=note._id%>" title="删除">删除</a></td>
 				</tr>
 			<%})%>		
 			</tbody>
