@@ -1,29 +1,26 @@
-
 //加载依赖库
-var express = require('express');
+var express =require('express');
 var path = require('path');
 var bodyParser = require('body-parser');
-var crypto = require('crypto');
+var crypto=require('crypto');
+var mongoose = require('mongoose');
+var models = require('./models/models');
 var session = require('express-session');
+var url=require('url');
 var moment=require('moment');
 
-//引入mongoose
-var mongoose = require('mongoose');
-//引入模型
-var models = require('./models/models');
+//加载工具模块
+var checkStr=require('./util/checkStr')
 
+//加载models
 var User = models.User;
 var Note = models.Note;
 
-//引入未登录情况下的解决办法
 
-//var checkLogin = require('./checkLogin.js');
 
-//使用mongoose链接服务
+//使用mongoose连接服务
 mongoose.connect('mongodb://localhost:27017/notes');
-mongoose.connection.on('error',console.error.bind(console,'链接数据库失败'));
-
-
+mongoose.connection.on('error',console.error.bind(console,'连接数据库失败'));
 
 
 //创建express实例
@@ -42,244 +39,279 @@ app.use(bodyParser.urlencoded({extended:true}));
 
 //建立session模型
 app.use(session({
-    secret:'1234',
-    name:'mynote',
-    cookie:{maxAge:1000*60*20},//设计session的保存时间为20分钟
-    resave:false,
-    saveUninitialized:true
+	secret:'1234',
+	name:'mynote',
+	cookie:{maxAge:1000*60*20},//设置session的保存时间为20分钟
+	resave:false,
+	saveUninitialized:true
 }));
-
-//响应首页get请求
-app.get('/',noLogin);
+var pageSize=5;
+//相应首页get请求
 app.get('/',function(req,res){
+	if(req.session.user!=null){
+		var page=Number(url.parse(req.url,true).query.page);
+		if(!page){
+			page=1;
+		}
+		Note.find({author:req.session.user.username},function(err,list){
+			if(err){
+				console.log('获取笔记列表失败');
+				return res.redirect('/');
+			}
+			Note.count({author:req.session.user.username},function(err,total){
+				if(err){
+					console.log('获取笔记列表失败');
+					return res.redirect('/');
+				}
+				var totalPage=Math.ceil(total/5);
+				if(totalPage==0){
+					totalPage=1;
+				}
+				return res.render('detail',{
+					user:req.session.user,
+					list:list,
+					totalPage:totalPage,
+					currentPage:page,
+					pageTitle:'首页',
+					moment:moment
+				});
+			})
 
-    Note.find({author:req.session.user.username})
-        .exec(function(err,allNotes){
-            if (err){
-                console.log(err);
-                return res.redirect('/');
-            }
-            res.render('index',{
-                title:'首页',
-                user:req.session.user,
-                notes:allNotes
-            });
-
-        });
+		}).limit(pageSize).skip((page-1)*pageSize);
+	}else{
+		res.redirect('/login')
+	}
 });
-
-
-
-//测试
-function noLogin(req, res, next){
-    if (!req.session.user){
-        console.log('抱歉，您还没有登录！');
-        return res.redirect('/login');//返回登录页面
-    }
-
-    next();
-}
-
-
-//获取笔记详情
-app.get('/detail/:_id',function(req,res){
-    console.log('查看笔记！');
-    Note.findOne({_id: req.params._id})
-        .exec(function(err,art){
-                if (err){
-                    console.log(err);
-                    return res.redirect('/');
-                }
-
-                if (art) {
-                    res.render('detail',{
-                        title:'笔记详情',
-                        user:req.session.user,
-                        art:art,
-                        moment:moment
-                    });
-                }
-        })
-});
-
-
-
 app.get('/register',function(req,res){
-    console.log('注册！');
-    res.render('reginster',{
-        user:req.session.user,
-        title:'注册'
-    });
+	if(req.session.user){
+		return res.redirect('/');
+	}
+	res.render('register',{
+		user:req.session.user,
+		username:'',
+		password:'',
+		passwordRepeat:'',
+		err:'',
+		pageTitle:'注册'
+	});
 });
 
-//post请求
-app.post('/register', function (req,res) {
-    //req.body可以获取到表单的每项数据
-    var username = req.body.username,
-        password = req.body.password,
-        passwordRepeat = req.body.passwordRepeat,
-        parten=/^[a-zA-Z0-9_]/;
-    //检查输入的用户名是否为空，使用trim去掉两端空格
-    if (username.trim().length == 0){
-        console.log('用户名不能为空！');
-        return res.redirect('/register');
-    }
-
-    //检查用户名：只能是字母、数字、下划线的组合，长度3-20个字符
-    //只能输入3-20个以字母开头、可带数字、“_”、“.”的字串
-
-        var patrn=/^[a-zA-Z]{1}([a-zA-Z0-9]|[._]){2,19}/;
-        if (!patrn.exec(username)){
-            console.log('用户名格式不对');
-            return res.redirect('/register');
-        }else {
-            console.log('用户名格式对');
-        }
-
-    //检查密码：长度不能少于6，必须同时包含数字、小写字母、大写字母。
-
-    var patrn=/^(\w){6,20}$/;
-    if (!patrn.exec(password)){
-        console.log('密码只能输入6-20个字母、数字、下划线');
-        return res.redirect('/register');
-    }
-
-
-
-    //检查输入的密码是否为空，使用trim去掉两端空格
-    if (password.trim().length == 0 || passwordRepeat.trim().length == 0){
-        console.log('密码不能为空！');
-        //alert("密码不能为空!");
-        return res.redirect('/register');
-    }
-
-    //检查输入的密码是否一致
-    if (password != passwordRepeat){
-        console.log('两次输入的密码不一致！');
-        //alert("两次输入的密码不一致！");
-        return res.redirect('/register');
-    }
-
-    //检查用户名是否已经存在，如果不存在，则保存该记录
-    User.findOne({username:username},function(err,user){
-        if (err){
-            console.log(err);
-            return res.redirect('/register');
-        }
-
-        if (user){
-            console.log('用户名已经存在');
-            return res.redirect('/register');
-        }
-
-        //对密码进行md5加密
-        var md5 = crypto.createHash('md5'),
-            md5password = md5.update(password).digest('hex');
-        //新建user对象用于保存对象
-        var newUser = new User({
-            username:username,
-            password:md5password
-        });
-
-        newUser.save(function(err,doc){
-            if (err){
-                console.log('注册成功！');
-                return res.redirect('/register');
-            }
-            console.log('注册成功！');
-            return res.redirect('/');
-        });
-    });
+app.post('/register',function(req,res){
+	var username=req.body.username,
+		password=req.body.password,
+		passwordRepeat=req.body.passwordRepeat;
+	//检查输入的用户名密码是否合乎要求
+	var err=checkStr.registerCheck(username,password,passwordRepeat);
+	if(err!=''){
+		console.log(err);
+		return res.render('register',{
+			user:req.session.user,
+			username:username,
+			password:password,
+			passwordRepeat:passwordRepeat,
+			err:err,
+			pageTitle:'注册'
+		});
+	}
+	
+	//检查用户名是否已经存在，如果不存在则保存该条记录
+	User.findOne({username:username},function(err,user){
+		if(err){
+			console.log(err);
+			return res.render('register',{
+				user:req.session.user,
+				username:username,
+				password:password,
+				passwordRepeat:passwordRepeat,
+				err:'内部错误，请重试！',
+				pageTitle:'注册'
+			});
+		}
+		if(user){
+			console.log('用户名已存在！');
+			return res.render('register',{
+				user:req.session.user,
+				username:username,
+				password:password,
+				passwordRepeat:passwordRepeat,
+				err:'该用户名已被注册！',
+				pageTitle:'注册'
+			});
+		}
+		//对密码进行md5加密
+		var md5=crypto.createHash('md5'),
+			md5password=md5.update(password).digest('hex');
+		
+		//新建user对象用于保存数据
+		var newUser=new User({
+			username:username,
+			password:md5password
+		});
+		
+		newUser.save(function(err,doc){
+			if(err){
+				console.log(err);
+				return res.render('register',{
+					user:req.session.user,
+					username:username,
+					password:password,
+					passwordRepeat:passwordRepeat,
+					err:'内部错误，请重试！',
+					pageTitle:'注册'
+				});
+			}
+			console.log('用户'+username+'注册成功');
+			return res.redirect('/login');
+		});
+	});
 });
 
+//login get
 app.get('/login',function(req,res){
-    console.log('登录！');
-    res.render('login',{
-        user:req.session.user,
-        title:'登录'
-    });
+	if(req.session.user){
+		return res.redirect('/');
+	}
+	res.render('login',{
+		user:req.session.user,
+		username:'',
+		password:'',
+		err:'',
+		pageTitle:'登录'
+	});
 });
-
-
-
 app.post('/login',function(req,res){
-    var username = req.body.username,
-        password = req.body.password;
-
-    User.findOne({username:username},function(err,user){
-        if (err){
-            console.log(err);
-            return res.redirect('/login');
-        }
-
-        if (!user){
-            console.log('用户不存在!');
-            return res.redirect('/login');
-        }
-
-        //对密码进行MD5加密
-        var md5 = crypto.createHash('md5'),
-            md5password = md5.update(password).digest('hex');
-        if (user.password !== md5password){
-            console.log('密码错误!');
-            return res.redirect('/login');
-        }
-        console.log('登录成功！');
-        user.password = null;
-        delete user.password;
-        req.session.user = user;
-        return res.redirect('/');
-    });
+	var username=req.body.username,
+		password=req.body.password,
+		rememberMe=req.body.rememberMe;
+	if(username.trim().length==0||password.trim().length==0){
+		var err='用户名密码不能为空！';
+		return res.render('login',{
+			user:req.session.user,
+			username:username,
+			password:password,
+			err:err,
+			pageTitle:'登录'
+		});
+	}
+	User.findOne({username:username},function(err,user){
+		if(err){
+			console.log(err)
+			return res.redirect('/login');
+		}
+		if(!user){
+			console.log('用户不存在！');
+			return res.render('login',{
+				user:req.session.user,
+				username:username,
+				password:password,
+				err:'用户不存在！',
+				pageTitle:'登录'
+			});
+		}
+		var md5= crypto.createHash('md5'),
+			md5password=md5.update(password).digest('hex');
+		if(user.password!==md5password){
+			console.log('密码错误！');
+			return res.render('login',{
+				user:req.session.user,
+				username:username,
+				password:password,
+				err:'密码错误！',
+				pageTitle:'登录'
+			});
+		}
+		console.log('用户'+username+'登录系统！');
+		user.password=null;
+		delete user.password;
+		req.session.user=user;
+		//用户点击记住我，将session.cookie.maxAge设为1000*60*60*24*7
+		if(rememberMe){
+			req.session.cookie.maxAge=1000*60*60*24*7;
+		}
+		return res.redirect('/');
+	});
 });
-
-
-
-
-
-
 app.get('/quit',function(req,res){
-    req.session.user = null;
-    console.log('退出！');
-    return res.redirect('/login');
+	console.log('用户'+req.session.user.name+'退出登录！');
+	req.session.user=null;
+	return res.redirect('/login');
 });
-
 app.get('/post',function(req,res){
-    console.log('发布！');
-    res.render('post',{
-        user: req.session.user,
-        title:'发布'
-    });
+	res.render('post',{
+		user:req.session.user,
+		title:"",
+		tag:"",
+		content:'',
+		err:"",
+		pageTitle:'发布笔记'
+	});
 });
+app.post('/post',function(req,res){
+	var title=req.body.title.trim(),
+		tag=req.body.tag.trim(),
+		content=req.body.content.trim(),
+		author=req.session.user.username;
+	//检查笔记title和content
+	var err = checkStr.postNoteCheck(title,content);
+	//有错误，返回错误信息
+	if(err!=""){
+		return res.render('post',{
+			user:req.session.user,
+			title:title,
+			tag:tag,
+			content:content,
+			err:err,
+			pageTitle:'发布笔记'
+		});
+	}
+	//新建note实体
+	var note = new Note({
+		title:title,
+		author:author,
+		tag:tag,
+		content:content
+	})
+	//保存数据库
+	note.save(function(err,doc){
+		if(err){
+			console.log(err);
+			return res.redirect('/post');
+		}
+		console.log('笔记发布成功！');
+		return res.redirect('/');
+	});
+})
 
-app.post('/post', function (req,res) {
-    var note = new Note({
-        title:req.body.title,
-        author:req.session.user.username,
-        tag:req.body.tag,
-        content:req.body.content
-    });
+/*app.get('/detail',function(req,res){
+	//依据用户名从数据看获取笔记列表
+	User.findAll({author:author},function(err,list){
+		if(err){
+			console.log('获取笔记列表失败');
+			return res.redirect('/');
+		}
+		return res.render('detail',{
+			user:req.session.user,
+			list:list,
+			pageTitle:'发布笔记'
+		});
+	});
 
-
-    note.save(function(err,doc){
-        if (err){
-            console.log(err);
-            return res.redirect('/post');
-        }
-
-        console.log('文章发表成功！');
-        return res.redirect('/');
-    });
-
-});
-
-
-
-
-
-
-
+});*/
+app.get('/delete',function(req,res){
+	var id = url.parse(req.url,true).query._id
+	console.log("delete note,_id="+id);
+	Note.remove({_id:id},function(err){
+		if(err){
+			console.log(err);
+			res.redirect('/')
+		}else{
+			console.log('note删除成功');
+			res.redirect('/');
+		}
+	});
+})
 
 //监听3000端口
 app.listen(3000,function(req,res){
-    console.log('app is running at port 3000');
+	console.log('app is running at port 3000');
 });

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title><%=pageTitle%></title>
+		<link href='/favicon.ico' rel="shortcut icon"/>
+		<link rel='stylesheet' href='/bower_components/bootstrap/dist/css/bootstrap.min.css'/>
+		<link rel='stylesheet' href='/css/common.css'/>
+	</head>
+	<body>
+	<div class="clearfix page-nav">
+	<% if(user){%>
+		<div class="pull-left nav-username">欢迎你，<%=user.username%></div>
+		<div class="pull-left"><a href="/post">发表</a></div>
+		<div class="pull-right nav-quit"><a href="/quit">退出</a></div>
+		<div class="pull-right nav-quit"><a href="/">首页</a></div>
+	<%}else{%>
+		<div class="pull-right nav-register"><a href="/register">注册</a></div>
+		<div class="pull-right nav-login"><a href="/login">登陆</a></div>
+		<div class="pull-right nav-quit"><a href="/">首页</a></div>
+	<%}%>
+	</div>
+<div class='text-center page-title'>新用户注册</div>
+<div class="container">
+	<div class="row">
+		<div class="col-xs-4 col-xs-offset-4">
+			<div class='text-center err-info'><%=err%></div>
+			<form method=post>
+				<div class=form-group>
+					<input type=text class=form-control name=username value='<%= username%>' placeholder=用户名 />
+				</div>
+				<div class=form-group>
+					<input type=text class=form-control name=password value='<%= password%>' placeholder=密码 />
+				</div>
+				<div class=form-group>
+					<input type=text class=form-control name=passwordRepeat value='<%= passwordRepeat%>' placeholder=确认密码 />
+				</div>
+				<button type=submit class="btn btn-default center-block">注册</button>
+			</form>
+		</div>
+	</div>
+
+</div>
+
+
+</body>
+	<script type="text/javascript" src='/bower_components/jquery/dist/jquery.js'></script>
+	<script src='/bower_components/jquery/dist/jquery.min.js'></script>
+	<script src='/bower_components/bootstrap/dist/js/bootstrap.min.js'></script>
+	<script type="text/javascript">
+	$(document).ready(function(){
+		var eUsername=$(":input[name='username']");
+		var eDiv=$(".text-center.err-info");
+		eUsername.click(function(){
+			eDiv.text("用户名限字母、数字、下划线")
+		});
+		eUsername.blur(function(){
+			var err=check(eUsername.val());
+			if(err==""){
+				eDiv.text("")
+			}else{
+				eDiv.text(err)
+			}
+		});
+	});
+	function check(username){
+		username = username.trim();
+		//正则表达式
+		var usernameRegex = /[^0-9^A-Z^a-z^_]/;
+		//检查输入的用户名是否为空
+		if(username.length==0){
+			return '用户名不能为空！';
+		}
+		//检查输入的用户名是否只包含字母、数字、下划线，并且长度为3-20个字符
+		if(usernameRegex.exec(username)){
+			return '用户名只能是字母、数字、下划线的组合';
+		}
+		if(username.length<3||username.trim().length>20){
+			return '用户名长度限3-20个字符';
+		}
+		return "";
+	}
+</script>
+</html>
